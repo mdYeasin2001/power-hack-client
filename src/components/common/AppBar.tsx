@@ -6,7 +6,8 @@ import { toast } from 'react-toastify';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { useLogoutMutation } from '../../feature/api/authApi';
 import { logout } from '../../feature/slices/authSlice';
-const AppBar = () => {
+const AppBar = (props: { paidAmount?: number }) => {
+    const { paidAmount } = props;
     const { user: { email } } = useAppSelector(state => state.auth);
     const [login, { isSuccess, isError, error }] = useLogoutMutation();
     const dispatch = useAppDispatch();
@@ -25,25 +26,28 @@ const AppBar = () => {
         }
     }, [isError, isSuccess])
     return (
-        <Navbar bg="light" variant="light">
-            <Container>
-                <NavLink to="/" className="navbar-brand">Hack</NavLink>
-                <Nav className="ms-auto">
-                    {email ?
-                        <Button variant="primary" onClick={handleLogout}>Logout</Button>
-                        :
-                        <>
-                            <NavLink to="/login" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
-                                Login
-                            </NavLink>
-                            <NavLink to="/registration" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
-                                Registration
-                            </NavLink>
-                        </>
-                    }
-                </Nav>
-            </Container>
-        </Navbar>
+        <header>
+            <Navbar bg="light" variant="light">
+                <Container>
+                    <NavLink to="/" className="navbar-brand">Hack</NavLink>
+                    <Nav className="ms-auto">
+                        {paidAmount !== undefined ? <div className="me-3 mt-2">Paid Amount: {paidAmount} </div> : <></>}
+                        {email ?
+                            <Button variant="primary" onClick={handleLogout}>Logout</Button>
+                            :
+                            <>
+                                <NavLink to="/login" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
+                                    Login
+                                </NavLink>
+                                <NavLink to="/registration" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
+                                    Registration
+                                </NavLink>
+                            </>
+                        }
+                    </Nav>
+                </Container>
+            </Navbar>
+        </header>
     );
 };
 

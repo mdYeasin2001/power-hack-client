@@ -3,10 +3,9 @@ import AppLayout from "../layouts/AppLayout";
 import { Table, Button, Form } from "react-bootstrap";
 import PrivateTemplate from "../templates/PrivateTemplate";
 import { useState, useEffect } from "react";
-import AddBillModal from "../components/modals/AddBillModal";
+import BillModal from "../components/modals/BillModal";
 import { useGetAllBillQuery, useGetBillWithQueryMutation } from "../feature/api/billApi";
 import DeleteConfirmModal from "../components/modals/DeleteConfirmModal";
-import UpdateBillModal from "../components/modals/UpdateBillModal";
 
 
 export type Bill = {
@@ -20,6 +19,7 @@ export type Bill = {
 const Home = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [show, setShow] = useState(false);
+    const [paidAmount, setPaidAmount] = useState(0);
 
     const handleClose = () => setShow(false);
     const [bills, setBills] = useState<Bill[]>([]);
@@ -30,11 +30,6 @@ const Home = () => {
 
     const { data: billsData, isSuccess } = useGetAllBillQuery({});
     const [getBillWithQuery, { data, isLoading: isLoadingBill, isError: isErrorBill, isSuccess: isSuccessBill }] = useGetBillWithQueryMutation();
-
-    console.log("pageData", pageData);
-    console.log("data", billsData);
-
-
 
     useEffect(() => {
         setBills(billsData?.data?.bills || [])
@@ -74,11 +69,17 @@ const Home = () => {
     }
     return (
         <PrivateTemplate>
-            <AppLayout>
-                <AddBillModal
+            <AppLayout paidAmount={paidAmount}>
+                <BillModal
                     show={show}
                     handleClose={handleClose}
                     setBills={setBills}
+                    data={{ id: "", fullName: "", email: "", phone: "", payableAmount: "" }}
+                    type="adding"
+                    title="Add new bill"
+                    submitBtnText="Add"
+                    setPaidAmount={setPaidAmount}
+                    getBillWithQuery={getBillWithQuery}
                 />
                 <div>
                     <div className="d-flex justify-content-between algin-items-center mb-3 bg-light p-2 rounded">
@@ -154,10 +155,13 @@ export const BillRow = (props: { id: string, fullName: string, email: string, ph
                 handleClose={handleCloseDeleteConfirmModal}
                 id={id}
             />
-            <UpdateBillModal
+            <BillModal
                 show={showEditModal}
                 handleClose={handleCloseEditModal}
                 data={{ id, fullName, email, phone, payableAmount: payableAmount + "" }}
+                type="updating"
+                title="Update bill"
+                submitBtnText="Save Changes"
             />
             <td>{id}</td>
             <td>{fullName}</td>

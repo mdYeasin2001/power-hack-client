@@ -4,10 +4,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "react-toastify";
-import { useEffect } from "react";
+import { Dispatch, SetStateAction, useEffect } from "react";
 import { FormTextInput } from "../utils/Form";
-import { useUpdateBillMutation } from "../../feature/api/billApi";
+import { useAddBillMutation, useUpdateBillMutation } from "../../feature/api/billApi";
 import ButtonLoader from "../utils/loaders/ButtonLoader";
+import { Bill } from "../../pages/Home";
 
 const schema = z.object({
     fullName: z.string().min(1, "Full name is required!"),
@@ -20,7 +21,9 @@ type FormData = z.infer<typeof schema>
 
 type Props = {
     show: boolean
-    handleClose: () => void,
+    handleClose: () => void
+    setBills?: Dispatch<SetStateAction<Bill[]>>
+    setPaidAmount?: Dispatch<SetStateAction<number>>
     data: {
         id: string
         fullName: string
@@ -28,9 +31,13 @@ type Props = {
         phone: string
         payableAmount: string
     }
+    title: string
+    submitBtnText: string
+    type: "adding" | "updating"
+    getBillWithQuery?: any
 }
-const UpdateBillModal = (props: Props) => {
-    const { show, handleClose, data: { id, fullName, email, phone, payableAmount } } = props;
+const BillModal = (props: Props) => {
+    const { show, handleClose, setBills, submitBtnText, title, type, data: { id, fullName, email, phone, payableAmount }, setPaidAmount, getBillWithQuery } = props;
 
     const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
         resolver: zodResolver(schema),
@@ -41,24 +48,43 @@ const UpdateBillModal = (props: Props) => {
             payableAmount
         }
     });
-    const [updateBill, { isLoading, isSuccess, isError, error }] = useUpdateBillMutation();
+    const [addBill, { isLoading: isLoadingAdd, isSuccess: isSuccessAdd, isError: isErrorAdd, error: addError }] = useAddBillMutation();
+    const [updateBill, { isLoading: isLoadingUpdate, isSuccess: isSuccessUpdate, isError: isErrorUpdate, error: updateError }] = useUpdateBillMutation();
 
     const updateBillHandler = (data: FormData) => updateBill({ id, data })
 
+    const addBillHandler = (data: FormData) => {
+        addBill(data);
+        handleClose();
+        const bill = {
+            ...data,
+            _id: "Generating Id..."
+        }
+        setBills && setBills(prev => [bill, ...prev])
+        const amount = +data.payableAmount || 0
+        setPaidAmount && setPaidAmount(prev => prev + amount);
+    }
+
     useEffect(() => {
-        if (isSuccess) {
+        if (isSuccessAdd) {
+            toast.success('New Bill added successfully!')
+        } else if (isErrorAdd) {
+            toast.error((addError as any).data.message)
+            getBillWithQuery && getBillWithQuery()
+        }
+
+        if (isSuccessUpdate) {
             toast.success('Bill updated successfully!')
             handleClose();
-        } else if (isError) {
-            toast.error((error as any).data.message)
-            console.log("request error", error);
+        } else if (isErrorUpdate) {
+            toast.error((updateError as any).data.message)
         }
-    }, [isError, isSuccess])
+    }, [isErrorAdd, isSuccessAdd, isSuccessUpdate, isErrorUpdate])
     return (
         <Modal show={show} onHide={handleClose}>
-            <form onSubmit={handleSubmit(updateBillHandler)}>
+            <form onSubmit={handleSubmit(type === "adding" ? addBillHandler : updateBillHandler)}>
                 <Modal.Header closeButton>
-                    <Modal.Title>Update bill</Modal.Title>
+                    <Modal.Title>{title}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <FormTextInput
@@ -92,15 +118,15 @@ const UpdateBillModal = (props: Props) => {
                 </Modal.Body>
                 <Modal.Footer>
                     <Button variant="primary" type="submit">
-                        {isLoading ? <ButtonLoader /> : "Save Changes"}
+                        {isLoadingAdd || isLoadingUpdate ? <ButtonLoader /> : submitBtnText}
                     </Button>
                     <Button variant="danger" type="button" onClick={handleClose}>
                         Cancel
                     </Button>
                 </Modal.Footer>
             </form>
-        </Modal>
+        </Modal >
     );
 };
 
-export default UpdateBillModal;
+export default BillModal;
