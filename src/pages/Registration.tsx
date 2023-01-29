@@ -1,9 +1,17 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { FormTextInput } from "../components/utils/Form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "react-bootstrap";
 import AppLayout from "../layouts/AppLayout";
+import { useEffect } from "react";
+import { useAppDispatch } from "../app/hooks";
+import { useRegistrationMutation } from "../feature/api/authApi";
+import ButtonLoader from "../components/utils/loaders/ButtonLoader";
+import { toast } from "react-toastify";
+import { login } from "../feature/slices/authSlice";
+import { useNavigate, Link } from "react-router-dom";
 
 const schema = z.object({
     username: z.string().min(5, "Enter a valid username. Must be at least 5 characters!"),
@@ -26,7 +34,22 @@ const Registration = () => {
     const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
         resolver: zodResolver(schema)
     });
-    const registrationHandler = (data: FormData) => console.log(data);
+
+    const dispatch = useAppDispatch();
+    const navigate = useNavigate();
+    const [registration, { data, isLoading, isSuccess, isError, error }] = useRegistrationMutation();
+
+    const registrationHandler = (data: FormData) => registration(data);
+    useEffect(() => {
+        if (isSuccess) {
+            toast.success('login successfully!')
+            const { username = "", email = "", avatar = "" } = data.data.user;
+            dispatch(login({ username, email, avatar }));
+            navigate("/", { replace: true })
+        } else if (isError) {
+            toast.error((error as any).data.message)
+        }
+    }, [isError, isSuccess])
     return (
         <AppLayout>
             <div className="row">
@@ -64,7 +87,12 @@ const Registration = () => {
                                 register={register}
                                 error={errors.confirmPassword?.message}
                             />
-                            <Button variant="primary w-100" type="submit">Registration</Button>
+                            <div>
+                                <p>Already have an account? <Link to="/login">Login Here</Link></p>
+                            </div>
+                            <Button variant="primary w-100" type="submit">
+                                {isLoading ? <ButtonLoader /> : "Registration"}
+                            </Button>
                         </form>
                     </div>
                 </div>

@@ -11,6 +11,7 @@ const PrivateTemplate = (props: PrivateTemplateProps) => {
     const { children } = props;
     const { refresh, user: { email } } = useAppSelector((state) => state.auth);
     const navigate = useNavigate();
+    console.log(refresh, email);
 
     useEffect(() => {
         if (refresh && !email) {
