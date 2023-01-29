@@ -37,7 +37,7 @@ const AddBillModal = (props: Props) => {
         handleClose();
         const bill = {
             ...data,
-            _id: "Loading..."
+            _id: "Generating Id..."
         }
         setBills(prev => [bill, ...prev])
     }
